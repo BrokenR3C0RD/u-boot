@@ -48,10 +48,10 @@ void mctl_set_timing_params(const struct dram_para *para) {
   writel(trp | trrd << 8 | tccd << 16 | trcd << 24, &mctl_ctl->dramtmg[4]);
   writel(tcke | tckesr << 8 | tcksre << 16 | tcksrx << 24,
          &mctl_ctl->dramtmg[5]);
-  writel((txp + 2) | 0x20200000, &mctl_ctl->dramtmg[6]);
-  writel(txs_x32 | 0x1000 | txs_abort_x32 << 16 | txs_abort_x32 << 24,
+  writel((txp + 2) | 0x20 << 16 | 0x20 << 24, &mctl_ctl->dramtmg[6]);
+  writel(txs_x32 | 0x10 << 8 | txs_abort_x32 << 16 | txs_abort_x32 << 24,
          &mctl_ctl->dramtmg[8]);
-  writel(wr2rd_s | trrd_s << 8 | 0x20000, &mctl_ctl->dramtmg[9]);
+  writel(wr2rd_s | trrd_s << 8 | 0x2 << 16, &mctl_ctl->dramtmg[9]);
   writel(0xe0c05, &mctl_ctl->dramtmg[10]);
   writel(0x440c021c, &mctl_ctl->dramtmg[11]);
   writel(tmrd_pda, &mctl_ctl->dramtmg[12]);
