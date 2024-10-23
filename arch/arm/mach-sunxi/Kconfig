@@ -79,11 +79,125 @@ config DRAM_SUN50I_ODT_EN
 	help
 	  ODT EN value from vendor DRAM settings.
 
-config DRAM_SUN50I_TPR0
-	hex "DRAM TPR0 parameter"
+config DRAM_SUN50I_PARA0
+	hex "DRAM PARA0 parameter"
+	depends on DRAM_SUN50I_A133
+	help
+	  PARA0 value from vendor DRAM settings.
+
+config DRAM_SUN50I_PARA1
+	hex "DRAM PARA1 parameter"
+	help
+	  PARA1 value from vendor DRAM settings.
+
+config DRAM_SUN50I_PARA2
+	hex "DRAM PARA2 parameter"
+	help
+	  PARA2 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR0
+	hex "DRAM MR0 parameter"
+	depends on DRAM_SUN50I_A133
 	default 0x0
 	help
-	  TPR0 value from vendor DRAM settings.
+	  MR0 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR1
+	hex "DRAM MR1 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR1 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR2
+	hex "DRAM MR2 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR2 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR3
+	hex "DRAM MR3 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR3 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR4
+	hex "DRAM MR4 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR4 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR5
+	hex "DRAM MR5 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR5 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR6
+	hex "DRAM MR6 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR6 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR11
+	hex "DRAM MR11 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR11 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR12
+	hex "DRAM MR12 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR12 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR13
+	hex "DRAM MR13 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR13 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR14
+	hex "DRAM MR14 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR14 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR16
+	hex "DRAM MR16 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR16 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR17
+	hex "DRAM MR17 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR17 value from vendor DRAM settings.
+
+config DRAM_SUN50I_MR22
+	hex "DRAM MR22 parameter"
+	depends on !DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR22 value from vendor DRAM settings.
+
+config DRAM_SUN50I_TPR1
+	hex "DRAM TPR1 parameter"
+	default 0x0
+	help
+	  TPR1 value from vendor DRAM settings.
 
 config DRAM_SUN50I_TPR2
 	hex "DRAM TPR2 parameter"
@@ -91,9 +205,22 @@ config DRAM_SUN50I_TPR2
 	help
 	  TPR2 value from vendor DRAM settings.
 
+config DRAM_SUN50I_TPR2
+	hex "DRAM TPR2 parameter"
+	depends on !DRAM_SUN50I_A133
+	default 0x0
+	help
+	  TPR2 value from vendor DRAM settings.
+
+config DRAM_SUN50I_TPR3
+	hex "DRAM TPR3 parameter"
+	default 0x0
+	help
+	  TPR3 value from vendor DRAM settings.
+
 config DRAM_SUN50I_TPR6
 	hex "DRAM TPR6 parameter"
-	default 0x3300c080
+	default 0x33808080
 	help
 	  TPR6 value from vendor DRAM settings.
 
@@ -114,6 +241,20 @@ config DRAM_SUN50I_TPR12
 	default 0x0
 	help
 	  TPR12 value from vendor DRAM settings.
+
+config DRAM_SUN50I_TPR13
+	hex "DRAM TPR13 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  TPR13 value from vendor DRAM settings.
+
+config DRAM_SUN50I_TPR14
+	hex "DRAM TPR14 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  TPR14 value from vendor DRAM settings.
 
 choice
 	prompt "DRAM PHY pin mapping selection"
@@ -188,7 +329,7 @@ config SUNXI_BL31_BASE
 	hex
 	default 0x00044000 if MACH_SUN50I || MACH_SUN50I_H5
 	default 0x40000000 if MACH_SUN50I_H616
-	default 0x00104000 if SUN50I_GEN_H6
+	# default 0x00104000 if SUN50I_GEN_H6
 	default 0x0
 	help
 	  Address where BL31 (TF-A) is loaded, or zero if BL31 is not used.
