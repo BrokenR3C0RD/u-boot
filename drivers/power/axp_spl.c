@@ -36,7 +36,7 @@ static const struct axp_reg_desc_spl axp_spl_dcdc_regulators[] = {
 #define AXP_SHUTDOWN_REG	0x27
 #define AXP_SHUTDOWN_MASK	BIT(0)
 
-#if defined(CONFIG_AXP803_POWER)				/* AXP803 */
+#elif defined(CONFIG_AXP803_POWER)				/* AXP803 */
 
 static const struct axp_reg_desc_spl axp_spl_dcdc_regulators[] = {
 	{ 0x10, BIT(0), 0x20, 0x1f, 1600, 3400, 100, NA },
