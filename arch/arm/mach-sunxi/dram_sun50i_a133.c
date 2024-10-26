@@ -1160,7 +1160,7 @@ static int libdram_dramc_simple_wr_test(uint32_t dram_size, uint32_t test_range)
 		}
 		continue;
 fail:
-		debug("DRAM simple test FAIL----- at address %p\n", ptr);
+		debug("DRAM simple test FAIL----- address %p = %d\n", ptr, readl(ptr));
 		return 1;
 	}
 
