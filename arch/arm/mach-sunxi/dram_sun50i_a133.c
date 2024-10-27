@@ -329,6 +329,9 @@ static void mctl_com_init(const struct dram_para *para,
 		setbits_le32(0x03102ea8, BIT(0));
 
 	clrsetbits_le32(&mctl_ctl->sched[0], 0xff << 8, 0x30 << 8);
+	if (!(para->tpr13 & BIT(28)))
+		clrsetbits_le32(&mctl_ctl->sched[0], 0xf, BIT(0));
+
 	writel(0, &mctl_ctl->hwlpctl);
 
 	/* Master settings */
@@ -369,7 +372,7 @@ static void mctl_com_init(const struct dram_para *para,
 
 	writel(0, &mctl_ctl->pwrctl);
 
-	/* Update values */
+	/* Disable automatic controller updates + automatic controller update requests */
 	setbits_le32(&mctl_ctl->dfiupd[0], BIT(31) | BIT(30));
 	setbits_le32(&mctl_ctl->zqctl[0], BIT(31) | BIT(30));
 	setbits_le32(&mctl_ctl->unk_0x2180, BIT(31) | BIT(30));
@@ -393,7 +396,7 @@ static void mctl_drive_odt_config(const struct dram_para *para)
 
 	/* DX drive */
 	for (i = 0; i < 4; i++) {
-		base = SUNXI_DRAM_PHY0_BASE + 0x388 + 0x20 * i;
+		base = SUNXI_DRAM_PHY0_BASE + 0x388 + 0x40 * i;
 		val = (para->dx_dri >> (i * 8)) & 0x1f;
 
 		writel(val, base);
@@ -408,7 +411,7 @@ static void mctl_drive_odt_config(const struct dram_para *para)
 
 	/* CA drive */
 	for (i = 0; i < 2; i++) {
-		base = SUNXI_DRAM_PHY0_BASE + 0x340UL + 0x8UL * i;
+		base = SUNXI_DRAM_PHY0_BASE + 0x340 + 0x8 * i;
 		val = (para->ca_dri >> (i * 8)) & 0x1f;
 
 		writel(val, base);
@@ -417,7 +420,7 @@ static void mctl_drive_odt_config(const struct dram_para *para)
 
 	/* DX ODT */
 	for (i = 0; i < 4; i++) {
-		base = SUNXI_DRAM_PHY0_BASE + 0x380 + 0x40UL * i;
+		base = SUNXI_DRAM_PHY0_BASE + 0x380 + 0x40 * i;
 		val = (para->dx_odt >> (i * 8)) & 0x1f;
 
 		if (para->type == SUNXI_DRAM_TYPE_DDR4 ||
@@ -439,20 +442,20 @@ static void mctl_phy_ca_bit_delay_compensation(const struct dram_para *para)
 	u32 *ptr;
 
 	if (para->tpr10 & BIT(31)) {
-		val = para->mr2;
+		val = para->tpr2;
 	} else {
 		val = ((para->tpr10 << 1) & 0x1e) |
 		      ((para->tpr10 << 5) & 0x1e00) |
 		      ((para->tpr10 << 9) & 0x1e0000) |
 		      ((para->tpr10 << 13) & 0x1e000000);
 
-		if (para->tpr10 & BIT(19))
+		if (para->tpr10 >> 29 != 0)
 			val <<= 1;
 	}
 
 	ptr = (u32 *)(SUNXI_DRAM_PHY0_BASE + 0x780);
-	for (i = 0; i < 128; i++)
-		writel((para->tpr2 >> 8) & 0x3f, &ptr[i]);
+	for (i = 0; i < 32; i++)
+		writel((val >> 8) & 0x3f, &ptr[i]);
 
 	writel(val & 0x3f, SUNXI_DRAM_PHY0_BASE + 0x7dc);
 	writel(val & 0x3f, SUNXI_DRAM_PHY0_BASE + 0x7e0);
@@ -687,7 +690,7 @@ static void mctl_dfi_init(const struct dram_para *para)
 	clrbits_le32(&mctl_ctl->pwrctl, BIT(5));
 	writel(1, &mctl_ctl->swctl);
 	mctl_await_completion(&mctl_ctl->swstat, BIT(0), BIT(0));
-	mctl_await_completion(&mctl_ctl->statr, BIT(1) | 0x3, 1);
+	mctl_await_completion(&mctl_ctl->statr, 0x3, 1);
 
 	udelay(200);
 
@@ -915,9 +918,11 @@ static bool mctl_calibrate_phy(const struct dram_para *para,
 	/* TODO: Implement write training */
 
 	mctl_phy_dx_delay_compensation(para);
+	/* TODO: Implement DFS */
 	clrbits_le32(SUNXI_DRAM_PHY0_BASE + 0x60, BIT(0));
 	clrbits_le32(SUNXI_DRAM_PHY0_BASE + 0x54, 7);
 
+	/* Q: Does self-refresh get disabled by a calibration? */
 	writel(0, &mctl_ctl->swctl);
 	clrbits_le32(&mctl_ctl->rfshctl3, BIT(1));
 	writel(1, &mctl_ctl->swctl);
@@ -938,8 +943,8 @@ static bool mctl_core_init(const struct dram_para *para,
 }
 
 /* Heavily inspired from H616 driver. UNUSED */
-/* static */void auto_detect_ranks(const struct dram_para *para,
-			      struct dram_config *config)
+/* static */ void auto_detect_ranks(const struct dram_para *para,
+				    struct dram_config *config)
 {
 	int i;
 	bool found_config;
@@ -973,8 +978,8 @@ static bool mctl_core_init(const struct dram_para *para,
 }
 
 /* UNUSED? */
-/* static */void mctl_auto_detect_dram_size(const struct dram_para *para,
-				       struct dram_config *config)
+/* static */ void mctl_auto_detect_dram_size(const struct dram_para *para,
+					     struct dram_config *config)
 {
 	unsigned int shift;
 
@@ -1038,7 +1043,7 @@ static bool mctl_core_init(const struct dram_para *para,
 
 /* Modified from H616 driver, UNUSED? */
 /* static */ void auto_detect_size(const struct dram_para *para,
-			     struct dram_config *config)
+				   struct dram_config *config)
 {
 	/* detect row address bits */
 	config->cols = 8;
@@ -1166,7 +1171,8 @@ static int libdram_dramc_simple_wr_test(uint32_t dram_size, uint32_t test_range)
 		}
 		continue;
 fail:
-		debug("DRAM simple test FAIL----- address %p = %d\n", ptr, readl(ptr));
+		debug("DRAM simple test FAIL----- address %p = %d\n", ptr,
+		      readl(ptr));
 		return 1;
 	}
 
