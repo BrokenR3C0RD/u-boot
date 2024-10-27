@@ -133,10 +133,12 @@ static void mctl_set_odtmap(const struct dram_para *para,
 		val = 0x400 | (temp2 - temp1) << 16 | temp1 << 24;
 		break;
 	case SUNXI_DRAM_TYPE_DDR4:
-	case SUNXI_DRAM_TYPE_LPDDR4:
 		val = 0x400 | (para->mr4 << 10 & 0x70000) |
 		      (((para->mr4 >> 12) & 1) + 6) << 24;
 
+		break;
+	case SUNXI_DRAM_TYPE_LPDDR4:
+		val = 0x4000400;
 		break;
 	}
 
@@ -528,7 +530,11 @@ static void mctl_phy_init(const struct dram_para *para,
 		val2 = 8;
 		break;
 	case SUNXI_DRAM_TYPE_LPDDR4:
-		val = 22;
+		if (para->tpr13 & BIT(28))
+			val = 22;
+		else
+			val = 20;
+
 		val2 = 10;
 		break;
 	}
