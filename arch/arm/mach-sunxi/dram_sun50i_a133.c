@@ -818,10 +818,10 @@ static inline void mctl_phy_dx_delay1_inner(u32 *base, u32 val1, u32 val2)
 		ptr += 2;
 	}
 
-	writel(val1, ptr + 1);
-	writel(val1, ptr + 49);
-	writel(val1, ptr);
-	writel(val1, ptr + 48);
+	writel(val2, ptr + 1);
+	writel(val2, ptr + 49);
+	writel(val2, ptr);
+	writel(val2, ptr + 48);
 }
 
 static inline void mctl_phy_dx_delay0_inner(u32 *base1, u32 *base2, u32 val1,
@@ -1188,8 +1188,10 @@ unsigned long sunxi_dram_init(void)
 	struct dram_config config = {
 		.cols = (para.para1 & 0xF),
 		.rows = (para.para1 >> 4) & 0xFF,
-		.banks = (para.para1 >> 12) & 0x3,
-		.bankgrps = (para.para1 >> 14) & 0x3,
+		// .banks = (para.para1 >> 12) & 0x3,
+		.banks = 3,
+		// .bankgrps = (para.para1 >> 14) & 0x3,
+		.bankgrps = 0,
 		.ranks = ((para.tpr13 >> 16) & 3),
 		.bus_full_width = !((para.para2 >> 3) & 1),
 	};
