@@ -63,7 +63,7 @@ void mctl_set_timing_params(const struct dram_para *para)
 	       &mctl_ctl->dramtmg[4]);
 	writel(tcke | tckesr << 8 | tcksre << 16 | tcksrx << 24,
 	       &mctl_ctl->dramtmg[5]);
-	writel((txp + 2) | 0x20 << 16 | 0x20 << 24, &mctl_ctl->dramtmg[6]);
+	writel((txp + 2) | 0x20UL << 16 | 0x20UL << 24, &mctl_ctl->dramtmg[6]);
 	writel(txs_x32 | 0x10 << 8 | txsabort_x32 << 16 | txsabort_x32 << 24,
 	       &mctl_ctl->dramtmg[8]);
 	writel(wr2rd_s | trrd_s << 8 | 0x2 << 16, &mctl_ctl->dramtmg[9]);
