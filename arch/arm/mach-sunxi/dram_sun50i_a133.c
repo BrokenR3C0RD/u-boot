@@ -584,7 +584,7 @@ static void mctl_phy_init(const struct dram_para *para,
 			val = 0x33;
 		break;
 	}
-	writel(val, SUNXI_DRAM_PHY0_BASE + 0x35c);
+	writel(val, SUNXI_DRAM_PHY0_BASE + 0x3dc);
 	writel(val, SUNXI_DRAM_PHY0_BASE + 0x45c);
 
 	mctl_drive_odt_config(para);

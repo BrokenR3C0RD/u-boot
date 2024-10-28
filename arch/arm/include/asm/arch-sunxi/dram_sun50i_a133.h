@@ -141,7 +141,7 @@ check_member(sunxi_mctl_ctl_reg, unk_0x4240, 0x4240);
 #define MSTR_2TMODE		BIT(10)
 #define MSTR_BUSWIDTH_FULL	(0 << 12)
 #define MSTR_BUSWIDTH_HALF	(1 << 12)
-#define MSTR_ACTIVE_RANKS(x)	(((x == 2) ? 3 : 1) << 24)
+#define MSTR_ACTIVE_RANKS(x)	(((x == 1) ? 3 : 1) << 24)
 #define MSTR_BURST_LENGTH(x)	(((x) >> 1) << 16)
 #define MSTR_DEVICECONFIG_X32	(3 << 30)
 
