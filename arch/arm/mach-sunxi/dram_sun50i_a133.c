@@ -909,12 +909,12 @@ static bool mctl_calibrate_phy(const struct dram_para *para,
 			if (mctl_phy_read_calibration(config))
 				break;
 		if (i == 5) {
-			debug("read calibration failed");
+			debug("read calibration failed\n");
 			return false;
 		}
 	}
 
-	/* TODO: Implement read training leveling */
+	/* TODO: Implement read training */
 	/* TODO: Implement write training */
 
 	mctl_phy_dx_delay_compensation(para);
@@ -942,9 +942,9 @@ static bool mctl_core_init(const struct dram_para *para,
 	return mctl_calibrate_phy(para, config);
 }
 
-/* Heavily inspired from H616 driver. UNUSED */
-/* static */ void auto_detect_ranks(const struct dram_para *para,
-				    struct dram_config *config)
+/* Heavily inspired from H616 driver. */
+static void auto_detect_ranks(const struct dram_para *para,
+			      struct dram_config *config)
 {
 	int i;
 	bool found_config;
@@ -977,39 +977,78 @@ static bool mctl_core_init(const struct dram_para *para,
 	debug("Found ranks = %d\n", config->ranks);
 }
 
-/* UNUSED? */
-/* static */ void mctl_auto_detect_dram_size(const struct dram_para *para,
-					     struct dram_config *config)
+/*
+ * Implemented based on broken code from boot0
+ * No clue if it actually works
+ * Hopefully someone else can make sense of this?
+ */
+static inline void auto_detect_bank_groups(const struct dram_para *para,
+					   struct dram_config *config)
+{
+	u32 value;
+	u64 i;
+
+	for (i = 0; i < 16; i++) {
+		if (i & 1)
+			value = i;
+		else
+			value = ~i;
+
+		writel(value, CFG_SYS_SDRAM_BASE + (i << 2));
+	}
+
+	// Check for aliasing at +64
+	for (i = 0; i < 16; i++) {
+		if (i & 1)
+			value = i;
+		else
+			value = ~i;
+
+		if (readl(CFG_SYS_SDRAM_BASE + (i << 2) + 64) == value) {
+			config->bankgrps = 0;
+			return;
+		}
+	}
+
+	// Check for aliasing at +128
+	for (i = 0; i < 16; i++) {
+		if (i & 1)
+			value = i;
+		else
+			value = ~i;
+
+		if (readl(CFG_SYS_SDRAM_BASE + (i << 2) + 128)) {
+			config->bankgrps = 1;
+			return;
+		}
+	}
+
+	config->bankgrps = 2;
+}
+
+static void mctl_auto_detect_dram_size(const struct dram_para *para,
+				       struct dram_config *config)
 {
 	unsigned int shift;
 
 	/* max config for bankgrps, minimum for everything else */
 	config->bankgrps = 2;
 	config->cols = 8;
-	config->banks = 0;
+	config->banks = 3;
 	config->rows = 14;
 	mctl_core_init(para, config);
 
-	shift = config->bus_full_width + 1;
-
-	/* detect bank group address bits */
-	for (config->bankgrps = 0; config->bankgrps < 2; config->bankgrps++) {
-		writel(config->bankgrps, CFG_SYS_SDRAM_BASE);
-		for (long i = 0; i < 0x100; i += 4) {
-			debug("[%lx] = %x\n", i, readl(CFG_SYS_SDRAM_BASE + i));
-		}
-		if (mctl_mem_matches(3ULL << (config->bankgrps + shift + 1)))
-			break;
+	if (para->type == SUNXI_DRAM_TYPE_DDR4) {
+		auto_detect_bank_groups(para, config);
+		debug("detected %u bank groups\n", config->bankgrps);
 	}
-
-	debug("detected %u bank groups\n", config->bankgrps);
 
 	/* reconfigure to make sure all active columns are accessible */
 	config->cols = 12;
 	mctl_core_init(para, config);
 
 	/* detect column address bits */
-	shift += config->bankgrps;
+	shift = 1 + config->bus_full_width + config->bankgrps;
 	for (config->cols = 8; config->cols < 12; config->cols++) {
 		if (mctl_mem_matches(1ULL << (config->cols + shift)))
 			break;
@@ -1041,60 +1080,6 @@ static bool mctl_core_init(const struct dram_para *para,
 	debug("detected %u rows\n", config->rows);
 }
 
-/* Modified from H616 driver, UNUSED? */
-/* static */ void auto_detect_size(const struct dram_para *para,
-				   struct dram_config *config)
-{
-	/* detect row address bits */
-	config->cols = 8;
-	config->rows = 18;
-	config->banks = 0;
-	config->bankgrps = 0;
-	mctl_core_init(para, config);
-
-	for (config->rows = 14; config->rows < 18; config->rows++) {
-		/* 8 banks, 8 bit per byte and 16/32 bit width */
-		if (mctl_mem_matches((1 << (config->bankgrps + config->banks +
-					    config->cols + config->rows +
-					    config->bus_full_width + 1))))
-			break;
-	}
-
-	/* detect column address bits */
-	config->cols = 12;
-	mctl_core_init(para, config);
-
-	for (config->cols = 8; config->cols < 12; config->cols++) {
-		/* 8 bits per byte and 16/32 bit width */
-		if (mctl_mem_matches(1 << (config->bankgrps + config->banks +
-					   config->cols +
-					   config->bus_full_width + 1)))
-			break;
-	}
-
-	/* detect bank address bits */
-	config->banks = 3;
-	mctl_core_init(para, config);
-
-	for (config->banks = 0; config->banks < 3; config->banks++) {
-		if (mctl_mem_matches(1 << (config->banks + config->bankgrps +
-					   config->cols +
-					   config->bus_full_width + 1)))
-			break;
-	}
-
-	/* TODO: This needs further testing on devices with different numbers of banks! */
-	/* detect bank group address bits */
-	config->bankgrps = 2;
-	mctl_core_init(para, config);
-	for (config->bankgrps = 0; config->bankgrps < 2; config->bankgrps++) {
-		if (mctl_mem_matches_base(3 << (config->bankgrps + 2 +
-						config->bus_full_width),
-					  CFG_SYS_SDRAM_BASE + 0x10))
-			break;
-	}
-}
-
 /* Modified from H616 driver to add banks and bank groups */
 static unsigned long calculate_dram_size(const struct dram_config *config)
 {
@@ -1117,13 +1102,10 @@ static const struct dram_para para = {
 #elif defined(CONFIG_SUNXI_DRAM_LPDDR4)
 	.type = SUNXI_DRAM_TYPE_LPDDR4,
 #endif
-	/* TODO: Populate from config */
 	.dx_odt = CONFIG_DRAM_SUN50I_DX_ODT,
 	.dx_dri = CONFIG_DRAM_SUN50I_DX_DRI,
 	.ca_dri = CONFIG_DRAM_SUN50I_CA_DRI,
 	.para0 = CONFIG_DRAM_SUN50I_PARA0,
-	.para1 = CONFIG_DRAM_SUN50I_PARA1,
-	.para2 = CONFIG_DRAM_SUN50I_PARA2,
 	.mr0 = CONFIG_DRAM_SUN50I_MR0,
 	.mr1 = CONFIG_DRAM_SUN50I_MR1,
 	.mr2 = CONFIG_DRAM_SUN50I_MR2,
@@ -1153,6 +1135,7 @@ static int libdram_dramc_simple_wr_test(uint32_t dram_size, uint32_t test_range)
 {
 	uint32_t *dram_memory = (uint32_t *)CFG_SYS_SDRAM_BASE;
 	uint32_t step = dram_size / 8;
+	int32_t error_value;
 
 	for (unsigned i = 0; i < test_range; i++) {
 		dram_memory[i] = i + 0x1234567;
@@ -1171,8 +1154,16 @@ static int libdram_dramc_simple_wr_test(uint32_t dram_size, uint32_t test_range)
 		}
 		continue;
 fail:
-		debug("DRAM simple test FAIL----- address %p = %d\n", ptr,
-		      readl(ptr));
+		error_value = (int32_t)readl(ptr);
+		debug("DRAM simple test FAIL----- address %p = %07x\n", ptr,
+		      error_value);
+
+		if (error_value < 0)
+			debug("Potentially aliased with +%07x\n",
+			      (error_value + 0x1234568) * 4);
+		else
+			debug("Potential aliased with +%07x\n",
+			      (error_value - 0x1234567) * 4);
 		return 1;
 	}
 
@@ -1185,29 +1176,26 @@ unsigned long sunxi_dram_init(void)
 	unsigned long size;
 
 	/* Keeping for now as documentation of where different parameters come from */
-	struct dram_config config = {
+	struct dram_config config; /* = {
 		.cols = (para.para1 & 0xF),
 		.rows = (para.para1 >> 4) & 0xFF,
-		// .banks = (para.para1 >> 12) & 0x3,
-		.banks = 3,
-		// .bankgrps = (para.para1 >> 14) & 0x3,
-		.bankgrps = 0,
+		.banks = (para.para1 >> 12) & 0x3,
+		.bankgrps = (para.para1 >> 14) & 0x3,
 		.ranks = ((para.tpr13 >> 16) & 3),
 		.bus_full_width = !((para.para2 >> 3) & 1),
-	};
+	}; */
 
 	/* Writing to undocumented SYS_CFG area, according to user manual. */
 	setbits_le32(0x03000160, BIT(8));
 	clrbits_le32(0x03000168, 0x3f);
 
-	/* TODO: Figure out how to catch bank group errors. */
-	// auto_detect_ranks(&para, &config);
-	// mctl_auto_detect_dram_size(&para, &config);
+	auto_detect_ranks(&para, &config);
+	mctl_auto_detect_dram_size(&para, &config);
 
 	if (!mctl_core_init(&para, &config))
 		return 0;
 
-	debug("cols = %d, rows = %d, banks = %d, bankgrps = %d, ranks = %d, full_width = %d\n",
+	debug("colums = %d, rows = %d, banks = %d, bank groups = %d, ranks = %d, full width = %d\n",
 	      config.cols, config.rows, config.banks, config.bankgrps,
 	      config.ranks, config.bus_full_width);
 
