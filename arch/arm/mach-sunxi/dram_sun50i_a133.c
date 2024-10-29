@@ -1031,11 +1031,15 @@ static void mctl_auto_detect_dram_size(const struct dram_para *para,
 {
 	unsigned int shift;
 
-	/* max config for bankgrps, minimum for everything else */
-	config->bankgrps = 2;
+	/* max config for bankgrps on DDR4, minimum for everything else */
 	config->cols = 8;
 	config->banks = 3;
 	config->rows = 14;
+	config->bankgrps = 0;
+
+	if (para->type == SUNXI_DRAM_TYPE_DDR4)
+		config->bankgrps = 2;
+
 	mctl_core_init(para, config);
 
 	if (para->type == SUNXI_DRAM_TYPE_DDR4) {
