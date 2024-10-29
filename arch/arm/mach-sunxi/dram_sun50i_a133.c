@@ -1033,7 +1033,7 @@ static void mctl_auto_detect_dram_size(const struct dram_para *para,
 
 	/* max config for bankgrps on DDR4, minimum for everything else */
 	config->cols = 8;
-	config->banks = 3;
+	config->banks = 0;
 	config->rows = 14;
 	config->bankgrps = 0;
 
@@ -1062,7 +1062,6 @@ static void mctl_auto_detect_dram_size(const struct dram_para *para,
 	/* reconfigure to make sure that all active banks are accessible */
 	config->banks = 3;
 	mctl_core_init(para, config);
-	debug("detected %u banks\n", config->bankgrps);
 
 	/* detect bank bits */
 	shift += config->cols;
@@ -1070,6 +1069,7 @@ static void mctl_auto_detect_dram_size(const struct dram_para *para,
 		if (mctl_mem_matches(1ULL << (config->banks + shift)))
 			break;
 	}
+	debug("detected %u banks\n", config->banks);
 
 	/* reconfigure to make sure that all active rows are accessible */
 	config->rows = 18;
