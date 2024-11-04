@@ -256,31 +256,16 @@ static void mctl_set_addrmap(const struct dram_config *config)
 		writel(0x0f | 0x0f << 8, &mctl_ctl->addrmap[7]);
 		break;
 	case 15:
-		if ((rank_bits == 1 && col_bits == 11) ||
-		    (rank_bits == 2 && col_bits == 10)) {
-			writel(addrmap_row_bx | (addrmap_row_bx + 1) << 8 |
-				       (addrmap_row_bx + 1) << 16 | 0x0f << 24,
-			       &mctl_ctl->addrmap[6]);
-		} else {
-			writel(addrmap_row_bx | addrmap_row_bx << 8 |
-				       addrmap_row_bx << 16 | 0x0f << 24,
-			       &mctl_ctl->addrmap[6]);
-		}
+
+		writel(addrmap_row_bx | addrmap_row_bx << 8 |
+			       addrmap_row_bx << 16 | 0x0f << 24,
+		       &mctl_ctl->addrmap[6]);
 		writel(0x0f | 0x0f << 8, &mctl_ctl->addrmap[7]);
 		break;
 	case 16:
-		if (rank_bits == 1 && col_bits == 10) {
-			writel((addrmap_row_bx + 1) |
-				       (addrmap_row_bx + 1) << 8 |
-				       (addrmap_row_bx + 1) << 16 |
-				       (addrmap_row_bx + 1) << 24,
-			       &mctl_ctl->addrmap[6]);
-		} else {
-			writel(addrmap_row_bx | addrmap_row_bx << 8 |
-				       addrmap_row_bx << 16 |
-				       addrmap_row_bx << 24,
-			       &mctl_ctl->addrmap[6]);
-		}
+		writel(addrmap_row_bx | addrmap_row_bx << 8 |
+			       addrmap_row_bx << 16 | addrmap_row_bx << 24,
+		       &mctl_ctl->addrmap[6]);
 		writel(0x0f | 0x0f << 8, &mctl_ctl->addrmap[7]);
 		break;
 	case 17:
@@ -304,8 +289,6 @@ static void mctl_set_addrmap(const struct dram_config *config)
 	/* Ranks */
 	if (rank_bits == 0) {
 		writel(0x1f, &mctl_ctl->addrmap[0]);
-	} else if ((rank_bits + col_bits + row_bits) == 27) {
-		writel(addrmap_row_bx + row_bits - 2, &mctl_ctl->addrmap[0]);
 	} else {
 		writel(addrmap_row_bx + row_bits, &mctl_ctl->addrmap[0]);
 	}
@@ -995,6 +978,7 @@ static inline void auto_detect_bank_groups(const struct dram_para *para,
 			value = ~i;
 
 		writel(value, CFG_SYS_SDRAM_BASE + (i << 2));
+		dsb();
 	}
 
 	// Check for aliasing at +64
@@ -1008,6 +992,7 @@ static inline void auto_detect_bank_groups(const struct dram_para *para,
 			config->bankgrps = 0;
 			return;
 		}
+		dmb();
 	}
 
 	// Check for aliasing at +128
@@ -1040,9 +1025,8 @@ static void mctl_auto_detect_dram_size(const struct dram_para *para,
 	if (para->type == SUNXI_DRAM_TYPE_DDR4)
 		config->bankgrps = 2;
 
-	mctl_core_init(para, config);
-
 	if (para->type == SUNXI_DRAM_TYPE_DDR4) {
+		mctl_core_init(para, config);
 		auto_detect_bank_groups(para, config);
 		debug("detected %u bank groups\n", config->bankgrps);
 	}
@@ -1050,6 +1034,7 @@ static void mctl_auto_detect_dram_size(const struct dram_para *para,
 	/* reconfigure to make sure all active columns are accessible */
 	config->cols = 12;
 	mctl_core_init(para, config);
+	dmb();
 
 	/* detect column address bits */
 	shift = 1 + config->bus_full_width + config->bankgrps;
