@@ -764,8 +764,8 @@ static bool mctl_phy_read_calibration(const struct dram_config *config)
 	else
 		val = 3;
 
-	while ((readl(SUNXI_DRAM_PHY0_BASE + 0x184) & val) != val) {
-		if (readl(SUNXI_DRAM_PHY0_BASE + 0x184) & 0x20) {
+	while ((readl_relaxed(SUNXI_DRAM_PHY0_BASE + 0x184) & val) != val) {
+		if (readl_relaxed(SUNXI_DRAM_PHY0_BASE + 0x184) & 0x20) {
 			result = false;
 			break;
 		}
@@ -780,8 +780,10 @@ static bool mctl_phy_read_calibration(const struct dram_config *config)
 
 		setbits_le32(SUNXI_DRAM_PHY0_BASE + 8, 1);
 
-		while ((readl(SUNXI_DRAM_PHY0_BASE + 0x184) & val) != val) {
-			if (readl(SUNXI_DRAM_PHY0_BASE + 0x184) & 0x20) {
+		while ((readl_relaxed(SUNXI_DRAM_PHY0_BASE + 0x184) & val) !=
+		       val) {
+			if (readl_relaxed(SUNXI_DRAM_PHY0_BASE + 0x184) &
+			    0x20) {
 				result = false;
 				break;
 			}
@@ -792,14 +794,14 @@ static bool mctl_phy_read_calibration(const struct dram_config *config)
 
 	clrbits_le32(SUNXI_DRAM_PHY0_BASE + 8, 0x30);
 
-	val = readl(SUNXI_DRAM_PHY0_BASE + 0x274) & 7;
-	tmp = readl(SUNXI_DRAM_PHY0_BASE + 0x26c) & 7;
+	val = readl_relaxed(SUNXI_DRAM_PHY0_BASE + 0x274) & 7;
+	tmp = readl_relaxed(SUNXI_DRAM_PHY0_BASE + 0x26c) & 7;
 	if (val < tmp)
 		val = tmp;
-	tmp = readl(SUNXI_DRAM_PHY0_BASE + 0x32c) & 7;
+	tmp = readl_relaxed(SUNXI_DRAM_PHY0_BASE + 0x32c) & 7;
 	if (val < tmp)
 		val = tmp;
-	tmp = readl(SUNXI_DRAM_PHY0_BASE + 0x334) & 7;
+	tmp = readl_relaxed(SUNXI_DRAM_PHY0_BASE + 0x334) & 7;
 	if (val < tmp)
 		val = tmp;
 	clrsetbits_le32(SUNXI_DRAM_PHY0_BASE + 0x38, 0x7, (val + 2) & 7);
