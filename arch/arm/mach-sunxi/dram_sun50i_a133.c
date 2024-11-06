@@ -199,39 +199,40 @@ static void mctl_set_addrmap(const struct dram_config *config)
 
 	/* Columns */
 	writel_relaxed(0x0 | bankgrp_bits << 8 | bankgrp_bits << 16 |
-		       bankgrp_bits << 24,
-	       &mctl_ctl->addrmap[2]);
+			       bankgrp_bits << 24,
+		       &mctl_ctl->addrmap[2]);
 
 	switch (col_bits) {
 	case 8:
 		writel_relaxed(bankgrp_bits | bankgrp_bits << 8 | 0x1f << 16 |
-			       0x1f << 24,
-		       &mctl_ctl->addrmap[3]);
+				       0x1f << 24,
+			       &mctl_ctl->addrmap[3]);
 		writel_relaxed(0x1f | 0x1f << 8, &mctl_ctl->addrmap[4]);
 		break;
 	case 9:
-		writel_relaxed(bankgrp_bits | bankgrp_bits << 8 | bankgrp_bits << 16 |
-			       0x1f << 24,
-		       &mctl_ctl->addrmap[3]);
+		writel_relaxed(bankgrp_bits | bankgrp_bits << 8 |
+				       bankgrp_bits << 16 | 0x1f << 24,
+			       &mctl_ctl->addrmap[3]);
 		writel_relaxed(0x1f | 0x1f << 8, &mctl_ctl->addrmap[4]);
 		break;
 	case 10:
-		writel_relaxed(bankgrp_bits | bankgrp_bits << 8 | bankgrp_bits << 16 |
-			       bankgrp_bits << 24,
-		       &mctl_ctl->addrmap[3]);
+		writel_relaxed(bankgrp_bits | bankgrp_bits << 8 |
+				       bankgrp_bits << 16 | bankgrp_bits << 24,
+			       &mctl_ctl->addrmap[3]);
 		writel_relaxed(0x1f | 0x1f << 8, &mctl_ctl->addrmap[4]);
 		break;
 	case 11:
-		writel_relaxed(bankgrp_bits | bankgrp_bits << 8 | bankgrp_bits << 16 |
-			       bankgrp_bits << 24,
-		       &mctl_ctl->addrmap[3]);
+		writel_relaxed(bankgrp_bits | bankgrp_bits << 8 |
+				       bankgrp_bits << 16 | bankgrp_bits << 24,
+			       &mctl_ctl->addrmap[3]);
 		writel_relaxed(bankgrp_bits | 0x1f << 8, &mctl_ctl->addrmap[4]);
 		break;
 	case 12:
-		writel_relaxed(bankgrp_bits | bankgrp_bits << 8 | bankgrp_bits << 16 |
-			       bankgrp_bits << 24,
-		       &mctl_ctl->addrmap[3]);
-		writel_relaxed(bankgrp_bits | bankgrp_bits << 8, &mctl_ctl->addrmap[4]);
+		writel_relaxed(bankgrp_bits | bankgrp_bits << 8 |
+				       bankgrp_bits << 16 | bankgrp_bits << 24,
+			       &mctl_ctl->addrmap[3]);
+		writel_relaxed(bankgrp_bits | bankgrp_bits << 8,
+			       &mctl_ctl->addrmap[4]);
 		break;
 	default:
 		panic("Unsupported dram configuration (col_bits = %d)",
@@ -246,50 +247,63 @@ static void mctl_set_addrmap(const struct dram_config *config)
 	 */
 	if (bank_bits == 3) {
 		writel_relaxed(addrmap_bank_bx | addrmap_bank_bx << 8 |
-			       addrmap_bank_bx << 16,
-		       &mctl_ctl->addrmap[1]);
+				       addrmap_bank_bx << 16,
+			       &mctl_ctl->addrmap[1]);
 	} else {
-		writel_relaxed(addrmap_bank_bx | addrmap_bank_bx << 8 | 0x3f << 16,
-		       &mctl_ctl->addrmap[1]);
+		writel_relaxed(addrmap_bank_bx | addrmap_bank_bx << 8 |
+				       0x3f << 16,
+			       &mctl_ctl->addrmap[1]);
 	}
 
 	/* Rows */
-	writel_relaxed(addrmap_row_bx | addrmap_row_bx << 8 | addrmap_row_bx << 16 |
-		       addrmap_row_bx << 24,
-	       &mctl_ctl->addrmap[5]);
+	writel_relaxed(addrmap_row_bx | addrmap_row_bx << 8 |
+			       addrmap_row_bx << 16 | addrmap_row_bx << 24,
+		       &mctl_ctl->addrmap[5]);
 
 	switch (row_bits) {
 	case 14:
-		writel_relaxed(addrmap_row_bx | addrmap_row_bx << 8 | 0x0f << 16 |
-			       0x0f << 24,
-		       &mctl_ctl->addrmap[6]);
+		writel_relaxed(addrmap_row_bx | addrmap_row_bx << 8 |
+				       0x0f << 16 | 0x0f << 24,
+			       &mctl_ctl->addrmap[6]);
 		writel_relaxed(0x0f | 0x0f << 8, &mctl_ctl->addrmap[7]);
 		break;
 	case 15:
-
+		/* TODO: Special cases for 12Gb / 24Gb */
 		writel_relaxed(addrmap_row_bx | addrmap_row_bx << 8 |
-			       addrmap_row_bx << 16 | 0x0f << 24,
-		       &mctl_ctl->addrmap[6]);
+				       addrmap_row_bx << 16 | 0x0f << 24,
+			       &mctl_ctl->addrmap[6]);
 		writel_relaxed(0x0f | 0x0f << 8, &mctl_ctl->addrmap[7]);
 		break;
 	case 16:
-		writel_relaxed(addrmap_row_bx | addrmap_row_bx << 8 |
-			       addrmap_row_bx << 16 | addrmap_row_bx << 24,
-		       &mctl_ctl->addrmap[6]);
+		/* TODO: Special case for 12Gb / 24Gb in here */
+		if (col_bits == 10)
+			writel_relaxed(addrmap_row_bx | addrmap_row_bx << 8 |
+					       (addrmap_row_bx + 1) << 16 |
+					       (addrmap_row_bx + 1) << 16,
+				       &mctl_ctl->addrmap[6]);
+		else
+			writel_relaxed(addrmap_row_bx | addrmap_row_bx << 8 |
+					       addrmap_row_bx << 16 |
+					       addrmap_row_bx << 24,
+				       &mctl_ctl->addrmap[6]);
+
 		writel_relaxed(0x0f | 0x0f << 8, &mctl_ctl->addrmap[7]);
 		break;
 	case 17:
 		writel_relaxed(addrmap_row_bx | addrmap_row_bx << 8 |
-			       addrmap_row_bx << 16 | addrmap_row_bx << 24,
-		       &mctl_ctl->addrmap[6]);
-		writel_relaxed(addrmap_row_bx | 0x0f << 8, &mctl_ctl->addrmap[7]);
+				       addrmap_row_bx << 16 |
+				       addrmap_row_bx << 24,
+			       &mctl_ctl->addrmap[6]);
+		writel_relaxed(addrmap_row_bx | 0x0f << 8,
+			       &mctl_ctl->addrmap[7]);
 		break;
 	case 18:
 		writel_relaxed(addrmap_row_bx | addrmap_row_bx << 8 |
-			       addrmap_row_bx << 16 | addrmap_row_bx << 24,
-		       &mctl_ctl->addrmap[6]);
+				       addrmap_row_bx << 16 |
+				       addrmap_row_bx << 24,
+			       &mctl_ctl->addrmap[6]);
 		writel_relaxed(addrmap_row_bx | addrmap_row_bx << 8,
-		       &mctl_ctl->addrmap[7]);
+			       &mctl_ctl->addrmap[7]);
 		break;
 	default:
 		panic("Unsupported dram configuration (row_bits = %d)",
@@ -302,14 +316,18 @@ static void mctl_set_addrmap(const struct dram_config *config)
 		writel_relaxed(0x1f, &mctl_ctl->addrmap[0]);
 		break;
 	case 1:
-		writel_relaxed(addrmap_row_bx + row_bits, &mctl_ctl->addrmap[0]);
+		/* TODO: Special case for 12Gb / 24Gb */
+		if (col_bits == 10 && row_bits == 16)
+			writel_relaxed(addrmap_row_bx + row_bits - 2,
+				       &mctl_ctl->addrmap[0]);
+		else
+			writel_relaxed(addrmap_row_bx + row_bits,
+				       &mctl_ctl->addrmap[0]);
 		break;
 	default:
 		panic("Unsupported dram configuration (rank_bits = %d)",
 		      rank_bits);
 	}
-
-	dsb();
 }
 
 static void mctl_com_init(const struct dram_para *para,
@@ -371,7 +389,8 @@ static void mctl_com_init(const struct dram_para *para,
 	mctl_set_addrmap(config);
 	mctl_set_timing_params(para);
 
-	writel_relaxed(0, &mctl_ctl->pwrctl);
+	dsb();
+	writel(0, &mctl_ctl->pwrctl);
 
 	/* Disable automatic controller updates + automatic controller update requests */
 	setbits_le32(&mctl_ctl->dfiupd[0], BIT(31) | BIT(30));
@@ -435,6 +454,7 @@ static void mctl_drive_odt_config(const struct dram_para *para)
 		else
 			writel_relaxed(val, base + 4);
 	}
+	dsb();
 }
 
 static void mctl_phy_ca_bit_delay_compensation(const struct dram_para *para)
@@ -463,21 +483,30 @@ static void mctl_phy_ca_bit_delay_compensation(const struct dram_para *para)
 
 	switch (para->type) {
 	case SUNXI_DRAM_TYPE_DDR3:
-		writel_relaxed((val >> 16) & 0x3f, SUNXI_DRAM_PHY0_BASE + 0x7b8);
-		writel_relaxed((val >> 24) & 0x3f, SUNXI_DRAM_PHY0_BASE + 0x784);
+		writel_relaxed((val >> 16) & 0x3f,
+			       SUNXI_DRAM_PHY0_BASE + 0x7b8);
+		writel_relaxed((val >> 24) & 0x3f,
+			       SUNXI_DRAM_PHY0_BASE + 0x784);
 		break;
 	case SUNXI_DRAM_TYPE_DDR4:
-		writel_relaxed((val >> 16) & 0x3f, SUNXI_DRAM_PHY0_BASE + 0x784);
+		writel_relaxed((val >> 16) & 0x3f,
+			       SUNXI_DRAM_PHY0_BASE + 0x784);
 		break;
 	case SUNXI_DRAM_TYPE_LPDDR3:
-		writel_relaxed((val >> 16) & 0x3f, SUNXI_DRAM_PHY0_BASE + 0x788);
-		writel_relaxed((val >> 24) & 0x3f, SUNXI_DRAM_PHY0_BASE + 0x790);
+		writel_relaxed((val >> 16) & 0x3f,
+			       SUNXI_DRAM_PHY0_BASE + 0x788);
+		writel_relaxed((val >> 24) & 0x3f,
+			       SUNXI_DRAM_PHY0_BASE + 0x790);
 		break;
 	case SUNXI_DRAM_TYPE_LPDDR4:
-		writel_relaxed((val >> 16) & 0x3f, SUNXI_DRAM_PHY0_BASE + 0x790);
-		writel_relaxed((val >> 24) & 0x3f, SUNXI_DRAM_PHY0_BASE + 0x78c);
+		writel_relaxed((val >> 16) & 0x3f,
+			       SUNXI_DRAM_PHY0_BASE + 0x790);
+		writel_relaxed((val >> 24) & 0x3f,
+			       SUNXI_DRAM_PHY0_BASE + 0x78c);
 		break;
 	}
+
+	dsb();
 }
 
 static void mctl_phy_init(const struct dram_para *para,
@@ -624,6 +653,7 @@ static void mctl_phy_init(const struct dram_para *para,
 	clrsetbits_le32(SUNXI_DRAM_PHY0_BASE + 0x144, 0x80, val);
 	clrsetbits_le32(SUNXI_DRAM_PHY0_BASE + 0x14c, 0xe0, val2);
 
+	dsb();
 	clrbits_le32(&mctl_com->unk_0x008, BIT(9));
 	udelay(1);
 	clrbits_le32(SUNXI_DRAM_PHY0_BASE + 0x14c, BIT(3));
@@ -631,9 +661,9 @@ static void mctl_phy_init(const struct dram_para *para,
 	mctl_await_completion((u32 *)(SUNXI_DRAM_PHY0_BASE + 0x180), BIT(2),
 			      BIT(2));
 
-	/* This is controlled by a tpr13 flag in boot0; doesn't hurt to always do it though. */
+	/* This delay is controlled by a tpr13 flag in boot0; doesn't hurt to always do it though. */
 	udelay(1000);
-	writel_relaxed(0x37, SUNXI_DRAM_PHY0_BASE + 0x58);
+	writel(0x37, SUNXI_DRAM_PHY0_BASE + 0x58);
 
 	setbits_le32(&prcm->sys_pwroff_gating, BIT(4));
 }
@@ -644,8 +674,8 @@ static inline void mctl_mr_write(u32 mrctrl0, u32 mrctrl1)
 	struct sunxi_mctl_ctl_reg *mctl_ctl =
 		(struct sunxi_mctl_ctl_reg *)SUNXI_DRAM_CTL0_BASE;
 
-	writel_relaxed(mrctrl1, &mctl_ctl->mrctrl1);
-	writel_relaxed(mrctrl0 | MRCTRL0_MR_WR | MRCTRL0_MR_RANKS_ALL,
+	writel(mrctrl1, &mctl_ctl->mrctrl1);
+	writel(mrctrl0 | MRCTRL0_MR_WR | MRCTRL0_MR_RANKS_ALL,
 	       &mctl_ctl->mrctrl0);
 	mctl_await_completion(&mctl_ctl->mrctrl0, MRCTRL0_MR_WR, 0);
 }
@@ -741,12 +771,12 @@ static void mctl_dfi_init(const struct dram_para *para)
 		break;
 	}
 
-	writel_relaxed(0, SUNXI_DRAM_PHY0_BASE + 0x54);
+	writel(0, SUNXI_DRAM_PHY0_BASE + 0x54);
 
 	/* Re-enable controller refresh */
-	writel_relaxed(0, &mctl_ctl->swctl);
+	writel(0, &mctl_ctl->swctl);
 	clrbits_le32(&mctl_ctl->rfshctl3, BIT(0));
-	writel_relaxed(1, &mctl_ctl->swctl);
+	writel(1, &mctl_ctl->swctl);
 }
 
 /* Slightly modified from H616 driver */
@@ -976,8 +1006,6 @@ static void auto_detect_ranks(const struct dram_para *para,
 			break;
 		}
 	}
-
-	debug("Found ranks = %d\n", config->ranks);
 }
 
 static void mctl_auto_detect_dram_size(const struct dram_para *para,
@@ -989,7 +1017,6 @@ static void mctl_auto_detect_dram_size(const struct dram_para *para,
 	config->cols = 8;
 	config->banks = 0;
 	config->rows = 14;
-	config->bankgrps = 0;
 
 	shift = 1 + config->bus_full_width;
 	if (para->type == SUNXI_DRAM_TYPE_DDR4) {
@@ -1004,12 +1031,15 @@ static void mctl_auto_detect_dram_size(const struct dram_para *para,
 		 */
 		if (mctl_mem_matches(1ULL << (shift + 4)))
 			config->bankgrps = 1;
+	} else {
+		/* No bank groups in (LP)DDR3/LPDDR4 */
+		config->bankgrps = 0;
 	}
 
 	/* reconfigure to make sure all active columns are accessible */
 	config->cols = 12;
 	mctl_core_init(para, config);
-	dmb();
+	dsb();
 
 	/* detect column address bits */
 	shift = 1 + config->bus_full_width + config->bankgrps;
@@ -1021,6 +1051,7 @@ static void mctl_auto_detect_dram_size(const struct dram_para *para,
 	/* reconfigure to make sure that all active banks are accessible */
 	config->banks = 3;
 	mctl_core_init(para, config);
+	dsb();
 
 	/* detect bank bits */
 	shift += config->cols;
@@ -1032,6 +1063,7 @@ static void mctl_auto_detect_dram_size(const struct dram_para *para,
 	/* reconfigure to make sure that all active rows are accessible */
 	config->rows = 18;
 	mctl_core_init(para, config);
+	dsb();
 
 	/* detect row address bits */
 	shift += config->banks;
@@ -1119,15 +1151,17 @@ static int libdram_dramc_simple_wr_test(unsigned long dram_size,
 		continue;
 fail:
 		error_value = (int64_t)readq(ptr);
-		debug("DRAM simple test FAIL----- address %p = %07lx\n", ptr,
+		debug("DRAM simple test FAIL----- address %p = %lx\n", ptr,
 		      error_value);
 
 		if (error_value < 0)
-			debug("Potentially aliased with +%lx\n",
-			      (error_value + 0xFEDCBA987654321) * 4);
+			debug("Potentially aliased with %lx\n",
+			      CFG_SYS_SDRAM_BASE +
+				      (error_value + 0xFEDCBA987654321) * 8);
 		else
-			debug("Potentially aliased with +%lx\n",
-			      (error_value - 0x123456789ABCDEF) * 4);
+			debug("Potentially aliased with %lx\n",
+			      CFG_SYS_SDRAM_BASE +
+				      (error_value - 0x123456789ABCDEF) * 8);
 		return 1;
 	}
 
@@ -1167,7 +1201,7 @@ unsigned long sunxi_dram_init(void)
 	debug("expected size: %lu MB\n", size >> 20);
 
 	/* TODO: This is just a sanity check for now. */
-	if (libdram_dramc_simple_wr_test(size, 4096))
+	if (libdram_dramc_simple_wr_test(size, 16384))
 		return 0;
 
 	return size;
