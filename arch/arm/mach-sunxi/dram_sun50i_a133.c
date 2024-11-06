@@ -165,20 +165,22 @@ static void mctl_set_addrmap(const struct dram_config *config)
 	struct sunxi_mctl_ctl_reg *mctl_ctl =
 		(struct sunxi_mctl_ctl_reg *)SUNXI_DRAM_CTL0_BASE;
 
+	u8 addrmap_bank_bx, addrmap_row_bx;
+
 	u8 bankgrp_bits = config->bankgrps;
 	u8 bank_bits = config->banks;
 	u8 rank_bits = config->ranks;
 	u8 col_bits = config->cols;
 	u8 row_bits = config->rows;
 
-	/* Offset for bank bits, adjusted for internal base of 2 */
-	u8 addrmap_bank_bx = bankgrp_bits + col_bits - 2;
-	/* Offset for rank bits, adjusted for internal base of 6 */
-	u8 addrmap_row_bx = (bankgrp_bits + bank_bits + col_bits) - 6;
-
 	/* According to docs, when the bus is half width, we need to adjust address mapping. */
 	if (!config->bus_full_width)
 		col_bits -= 1;
+
+	/* Offset for bank bits, adjusted for internal base of 2 */
+	addrmap_bank_bx = bankgrp_bits + col_bits - 2;
+	/* Offset for rank bits, adjusted for internal base of 6 */
+	addrmap_row_bx = bankgrp_bits + bank_bits + col_bits - 6;
 
 	/* Ordered from LSB to MSB: */
 	/* Bank groups */
@@ -279,7 +281,7 @@ static void mctl_set_addrmap(const struct dram_config *config)
 		if (col_bits == 10)
 			writel_relaxed(addrmap_row_bx | addrmap_row_bx << 8 |
 					       (addrmap_row_bx + 1) << 16 |
-					       (addrmap_row_bx + 1) << 16,
+					       (addrmap_row_bx + 1) << 24,
 				       &mctl_ctl->addrmap[6]);
 		else
 			writel_relaxed(addrmap_row_bx | addrmap_row_bx << 8 |
@@ -1157,7 +1159,8 @@ fail:
 		if (error_value < 0)
 			debug("Potentially aliased with %lx\n",
 			      CFG_SYS_SDRAM_BASE +
-				      (error_value + 0xFEDCBA987654321) * 8);
+				      (step + error_value + 0xFEDCBA987654321) *
+					      8);
 		else
 			debug("Potentially aliased with %lx\n",
 			      CFG_SYS_SDRAM_BASE +
