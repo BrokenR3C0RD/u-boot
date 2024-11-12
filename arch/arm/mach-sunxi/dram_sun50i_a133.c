@@ -177,7 +177,8 @@ static void mctl_set_addrmap(const struct dram_config *config)
 	u8 row_bits = config->rows;
 	u8 rank_bits = config->ranks;
 
-	u8 offset, hif_bits[6];
+	unsigned int offset;
+	unsigned int hif_bits[6];
 	int i;
 
 	/* According to docs, when the bus is half width, we need to adjust address mapping. */
@@ -283,12 +284,12 @@ static void mctl_set_addrmap(const struct dram_config *config)
 	 * - Bank[2] = HIF[2 + offset]
 	 */
 	if (bank_bits == 3)
-		writel(ADDRMAP1_BANK0_B2(offset) |
+		writel_relaxed(ADDRMAP1_BANK0_B2(offset) |
 			       ADDRMAP1_BANK1_B3(offset + 1) |
 			       ADDRMAP1_BANK2_B4(offset + 2),
 		       &mctl_ctl->addrmap[1]);
 	else
-		writel(ADDRMAP1_BANK0_B2(offset) |
+		writel_relaxed(ADDRMAP1_BANK0_B2(offset) |
 			       ADDRMAP1_BANK1_B3(offset + 1) |
 			       ADDRMAP1_BANK2_B4(ADDRMAP_DISABLED_1F_B(4)),
 		       &mctl_ctl->addrmap[1]);
