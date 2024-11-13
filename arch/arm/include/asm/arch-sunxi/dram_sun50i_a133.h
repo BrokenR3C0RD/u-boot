@@ -162,8 +162,9 @@ check_member(sunxi_mctl_ctl_reg, unk_0x4240, 0x4240);
 #define MRCTRL1_MR_DATA(x)	(x)
 
 /* ADDRMAP constants */
+#define ADDRMAP_DISABLED_3F_B(b)	(0x3f + b)
 #define ADDRMAP_DISABLED_1F_B(b)	(0x1f + b)
-#define ADDRMAP_DISABLED_0F(b)		(0x0f + b)
+#define ADDRMAP_DISABLED_0F_B(b)	(0x0f + b)
 
 #define _ADDRMAP_VALUE(a,x,b)		(((a) - b) << (x * 8))
 
