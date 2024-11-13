@@ -166,6 +166,8 @@ static void mctl_set_odtmap(const struct dram_para *para,
  * TODO: Handle 1.5GB + 3GB configurations. Info about these is stored in upper bits of TPR13 after
  * autoscan in boot0, and then some extra logic happens in the address mapping
  */
+#define INITIAL_HIF_OFFSET 3
+
 static void mctl_set_addrmap(const struct dram_config *config)
 {
 	struct sunxi_mctl_ctl_reg *mctl_ctl =
@@ -181,7 +183,12 @@ static void mctl_set_addrmap(const struct dram_config *config)
 	unsigned int hif_bits[6];
 	int i;
 
-	/* According to docs, when the bus is half width, we need to adjust address mapping. */
+	/*
+	 * When the bus is half width, we need to adjust address mapping,
+	 * as an extra column bit will be used to perform a full word
+	 * access. Thus, COL[0] will not be part of the HIF, offsetting
+	 * the column address mapping values by 1
+	 */
 	if (!config->bus_full_width)
 		col_bits--;
 
@@ -206,12 +213,13 @@ static void mctl_set_addrmap(const struct dram_config *config)
  	 * Required: COL[2] = HIF[2] (1 bit)
 	 * Thus, we start allocating from HIF[3] onwards
 	 */
-	offset = 3;
+	offset = INITIAL_HIF_OFFSET;
+	debug("[*] offset = %d\n", offset);
 
 	/*
 	 * Bank groups:
 	 * - BG0, if used, will be placed at HIF[3]
-	 * - BG1, if used, will be placed after column bits
+	 * - BG1, if used, will be placed at HIF[4]
          */
 	switch (bankgrp_bits) {
 	case 0:
@@ -236,12 +244,14 @@ static void mctl_set_addrmap(const struct dram_config *config)
 	}
 
 	offset += bankgrp_bits;
+	debug("[*] offset = %d\n", offset);
 
 	/*
 	 * Columns:
 	 * - COL[2] = HIF[2] (required)
-	 * - COL[3] = HIF[offset]
-	 * - ... COL[5] = HIF[2 + offset]
+	 * - COL[3] = HIF[offset] (always)
+	 * ...
+	 * - COL[5] = HIF[2 + offset] (always)
 	 */
 	writel_relaxed(ADDRMAP2_COL2_B2(2) | ADDRMAP2_COL3_B3(offset) |
 			       ADDRMAP2_COL4_B4(offset + 1) |
@@ -259,7 +269,7 @@ static void mctl_set_addrmap(const struct dram_config *config)
 	 */
 	for (i = 6; i < 12; i++) {
 		if (i < col_bits)
-			hif_bits[i - 6] = (offset - 3) + i;
+			hif_bits[i - 6] = offset + (i - INITIAL_HIF_OFFSET);
 		else
 			hif_bits[i - 6] = ADDRMAP_DISABLED_1F_B(i);
 	}
@@ -274,8 +284,8 @@ static void mctl_set_addrmap(const struct dram_config *config)
 			       ADDRMAP4_COL11_B11(hif_bits[5]),
 		       &mctl_ctl->addrmap[4]);
 
-	/* Subtract 3 for the fixed column bits we had to account for earlier */
-	offset += col_bits - 3;
+	offset = bankgrp_bits + col_bits;
+	debug("[*] offset = %d\n", offset);
 
 	/*
 	 * Banks
@@ -295,6 +305,7 @@ static void mctl_set_addrmap(const struct dram_config *config)
 		       &mctl_ctl->addrmap[1]);
 
 	offset += bank_bits;
+	debug("[*] offset = %d\n", offset);
 
 	/*
 	 * Rows
@@ -336,12 +347,16 @@ static void mctl_set_addrmap(const struct dram_config *config)
 		       &mctl_ctl->addrmap[7]);
 
 	offset += row_bits;
+	debug("[*] offset = %d\n", offset);
 
 	if (rank_bits == 1)
 		writel_relaxed(ADDRMAP0_CS0_B6(offset), &mctl_ctl->addrmap[0]);
 	else
 		writel_relaxed(ADDRMAP0_CS0_B6(ADDRMAP_DISABLED_1F_B(6)),
 			       &mctl_ctl->addrmap[0]);
+
+	offset += rank_bits;
+	debug("[*] FINAL voffset = %d\n", offset);
 }
 
 static void mctl_com_init(const struct dram_para *para,
