@@ -357,6 +357,9 @@ static void mctl_set_addrmap(const struct dram_config *config)
 
 	offset += rank_bits;
 	debug("[*] FINAL voffset = %d\n", offset);
+	for (i = 0; i < 8; i++)
+		debug("  ADDRMAP[%d] = 0x%08x\n", i,
+		      readl(&mctl_ctl->addrmap[i]));
 }
 
 static void mctl_com_init(const struct dram_para *para,
